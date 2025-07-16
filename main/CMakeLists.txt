@@ -1,4 +1,27 @@
 idf_component_register(
-    SRCS "app_main.c" "camera_init.c" "face_logic.c" "web_server.c"
-    INCLUDE_DIRS "."
+  SRCS
+    "app_main.c"
+    "app_httpd.c"
+    "recognition_status.c"
+  INCLUDE_DIRS
+    "."
+  PRIV_REQUIRES
+    esp_wifi
+    esp_event
+    nvs_flash
+    esp32-camera
+    esp_http_server
+    esp_system
+    log
+    driver
+    hal
+    freertos
+    esp_netif
+    lwip
+    mbedtls
+    soc
+    spi_flash
+    esp_rom
+    esp_psram
+    spiffs
 )

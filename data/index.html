@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP32-S3-EYE Face Recognition</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; margin: 0; padding: 20px; background-color: #e9ecef; color: #343a40; }
+        h1 { color: #007bff; margin-bottom: 20px; }
+        #cameraFeed {
+            max-width: 90%;
+            width: auto;
+            height: auto;
+            border: 4px solid #007bff;
+            border-radius: 10px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+            background-color: #fff;
+            display: block; /* Ensure it takes up its own line */
+            margin: 20px auto; /* Center it */
+        }
+        #recognitionStatus {
+            font-size: 2.2em;
+            font-weight: bold;
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 12px;
+            background-color: #ffffff;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+            display: inline-block; /* Allow it to shrink to content width */
+            min-width: 300px;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        .status-unknown { color: #dc3545; background-color: #ffe0e3; border: 2px solid #dc3545; } /* Red */
+        .status-recognized { color: #28a745; background-color: #d4edda; border: 2px solid #28a745; } /* Green */
+        .status-looking { color: #6c757d; background-color: #f8f9fa; border: 2px solid #6c757d; } /* Grey/Default */
+        .status-error { color: #ffc107; background-color: #fff3cd; border: 2px solid #ffc107; } /* Orange */
+        .footer { margin-top: 40px; font-size: 0.9em; color: #6c757d; }
+    </style>
+</head>
+<body>
+    <h1>ESP32-S3-EYE Face Recognition</h1>
+
+    <img id="cameraFeed" src="/stream" alt="Camera Live Feed">
+
+    <div id="recognitionStatus" class="status-looking">Loading status...</div>
+
+    <div class="footer">
+        Powered by ESP32-S3-EYE & ESP-WHO
+    </div>
+
+    <script>
+        // Function to fetch and update recognition status
+        function updateRecognitionStatus() {
+            fetch('/recognition_status.json')
+                .then(response => {
+                    // Check if the response was successful (status 200-299)
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json(); // Parse the JSON from the response
+                })
+                .then(data => {
+                    const statusElement = document.getElementById('recognitionStatus');
+                    // Remove all previous status classes
+                    statusElement.classList.remove('status-unknown', 'status-recognized', 'status-looking', 'status-error');
+
+                    // Update content and apply new status class based on data
+                    if (data.status === 'recognized') {
+                        statusElement.textContent = `Recognized: ${data.name || 'User ' + data.id}`;
+                        statusElement.classList.add('status-recognized');
+                    } else if (data.status === 'unknown') {
+                        statusElement.textContent = 'Status: Unknown Face Detected';
+                        statusElement.classList.add('status-unknown');
+                    } else { // Fallback for initial state, no detection, or unexpected status
+                        statusElement.textContent = 'Status: Looking for faces...';
+                        statusElement.classList.add('status-looking');
+                    }
+                })
+                .catch(error => {
+                    // Handle network errors or JSON parsing errors
+                    console.error('Error fetching recognition status:', error);
+                    const statusElement = document.getElementById('recognitionStatus');
+                    statusElement.textContent = 'Error fetching status... (Check board connection)';
+                    statusElement.classList.remove('status-unknown', 'status-recognized', 'status-looking');
+                    statusElement.classList.add('status-error');
+                });
+        }
+
+        // Run the update function once when the page loads, then set an interval to repeat
+        document.addEventListener('DOMContentLoaded', () => {
+            updateRecognitionStatus(); // Initial update
+            // Set an interval to poll the status every 1 second (1000 milliseconds)
+            setInterval(updateRecognitionStatus, 1000);
+        });
+    </script>
+</body>
+</html>
