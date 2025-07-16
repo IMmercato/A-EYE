@@ -46,8 +46,8 @@ void start_wifi(void) {
 
     wifi_config_t wifi_config = {
         .sta = {
-            .ssid = "your_ssid",
-            .password = "your_password"
+            .ssid = "Galaxy A53 5G61C5",
+            .password = "xfuw1104"
         }
     };
     esp_wifi_set_mode(WIFI_MODE_STA);
