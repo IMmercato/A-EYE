@@ -1,27 +1,5 @@
 idf_component_register(
-  SRCS
-    "app_main.c"
-    "app_httpd.c"
-    "recognition_status.c"
-  INCLUDE_DIRS
-    "."
-  PRIV_REQUIRES
-    esp_wifi
-    esp_event
-    nvs_flash
-    esp32-camera
-    esp_http_server
-    esp_system
-    log
-    driver
-    hal
-    freertos
-    esp_netif
-    lwip
-    mbedtls
-    soc
-    spi_flash
-    esp_rom
-    esp_psram
-    spiffs
+    SRCS "app_main.c" "app_httpd.c"
+    INCLUDE_DIRS "."
+    EMBED_FILES "data/index.html"
 )
