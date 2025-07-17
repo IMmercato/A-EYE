@@ -1,60 +1,110 @@
 #include <esp_log.h>
 #include <esp_http_server.h>
+#include <esp_spiffs.h>
 #include <string.h>
+#include <sys/stat.h>
 #include "app_httpd.h"
+
+#define MAX_FILENAME 512
 
 static const char *TAG = "HTTPD";
 
-// Simple HTML content as string literal
-static const char index_html[] = 
-"<!DOCTYPE html>\n"
-"<html>\n"
-"<head>\n"
-"    <meta charset=\"UTF-8\">\n"
-"    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n"
-"    <title>A-EYE Control Panel</title>\n"
-"    <style>\n"
-"        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f0f0f0; }\n"
-"        .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }\n"
-"        h1 { color: #333; text-align: center; }\n"
-"        .status { padding: 15px; margin: 20px 0; border-radius: 5px; }\n"
-"        .status.online { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }\n"
-"        .controls { display: flex; gap: 10px; justify-content: center; margin: 20px 0; }\n"
-"        button { padding: 10px 20px; font-size: 16px; border: none; border-radius: 5px; cursor: pointer; }\n"
-"        .btn-primary { background-color: #007bff; color: white; }\n"
-"        .btn-success { background-color: #28a745; color: white; }\n"
-"        .btn-danger { background-color: #dc3545; color: white; }\n"
-"        button:hover { opacity: 0.8; }\n"
-"    </style>\n"
-"</head>\n"
-"<body>\n"
-"    <div class=\"container\">\n"
-"        <h1>🤖 A-EYE System</h1>\n"
-"        <div class=\"status online\">\n"
-"            <strong>Status:</strong> System Online\n"
-"        </div>\n"
-"        <div class=\"controls\">\n"
-"            <button class=\"btn-primary\" onclick=\"alert('Feature coming soon!')\">Start Monitoring</button>\n"
-"            <button class=\"btn-success\" onclick=\"alert('Feature coming soon!')\">Settings</button>\n"
-"            <button class=\"btn-danger\" onclick=\"alert('Feature coming soon!')\">Stop</button>\n"
-"        </div>\n"
-"        <div style=\"text-align: center; margin-top: 30px; color: #666;\">\n"
-"            <p>A-EYE Control Panel v1.0</p>\n"
-"        </div>\n"
-"    </div>\n"
-"</body>\n"
-"</html>";
-
-esp_err_t index_handler(httpd_req_t *req) {
-    httpd_resp_set_type(req, "text/html");
-    httpd_resp_send(req, index_html, strlen(index_html));
+// Initialize SPIFFS
+esp_err_t init_spiffs(void) {
+    ESP_LOGI(TAG, "Initializing SPIFFS");
+    
+    esp_vfs_spiffs_conf_t conf = {
+        .base_path = "/spiffs",
+        .partition_label = "www",
+        .max_files = 5,
+        .format_if_mount_failed = true
+    };
+    
+    esp_err_t ret = esp_vfs_spiffs_register(&conf);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to initialize SPIFFS (%s)", esp_err_to_name(ret));
+        return ret;
+    }
+    
+    size_t total = 0, used = 0;
+    ret = esp_spiffs_info("www", &total, &used);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to get SPIFFS partition information (%s)", esp_err_to_name(ret));
+    } else {
+        ESP_LOGI(TAG, "SPIFFS: %d kB total, %d kB used", total / 1024, used / 1024);
+    }
+    
     return ESP_OK;
 }
 
-// Starts the webserver
+// Get MIME type from file extension
+const char* get_mime_type(const char* filename) {
+    if (strstr(filename, ".html")) return "text/html";
+    if (strstr(filename, ".css")) return "text/css";
+    if (strstr(filename, ".js")) return "application/javascript";
+    if (strstr(filename, ".png")) return "image/png";
+    if (strstr(filename, ".jpg") || strstr(filename, ".jpeg")) return "image/jpeg";
+    if (strstr(filename, ".ico")) return "image/x-icon";
+    return "text/plain";
+}
+
+// Generic file handler
+esp_err_t file_handler(httpd_req_t *req) {
+    char filepath[7 + MAX_FILENAME + 1];
+    const char* filename = req->uri;
+    
+    // Default to index.html for root
+    if (strcmp(filename, "/") == 0) {
+        filename = "/index.html";
+    }
+    
+    snprintf(filepath, sizeof(filepath), "/spiffs%s", filename);
+    
+    FILE *file = fopen(filepath, "r");
+    if (!file) {
+        ESP_LOGE(TAG, "Failed to open file: %s", filepath);
+        httpd_resp_send_404(req);
+        return ESP_FAIL;
+    }
+    
+    // Set content type
+    httpd_resp_set_type(req, get_mime_type(filename));
+    
+    // Send file in chunks
+    char buffer[1024];
+    size_t read_bytes;
+    do {
+        read_bytes = fread(buffer, 1, sizeof(buffer), file);
+        if (read_bytes > 0) {
+            httpd_resp_send_chunk(req, buffer, read_bytes);
+        }
+    } while (read_bytes > 0);
+    
+    // End response
+    httpd_resp_send_chunk(req, NULL, 0);
+    fclose(file);
+    
+    return ESP_OK;
+}
+
+// API endpoint example
+esp_err_t api_status_handler(httpd_req_t *req) {
+    httpd_resp_set_type(req, "application/json");
+    const char* json_response = "{\"status\":\"online\",\"uptime\":12345,\"memory\":\"75%\"}";
+    httpd_resp_send(req, json_response, strlen(json_response));
+    return ESP_OK;
+}
+
+// Start webserver with SPIFFS support
 httpd_handle_t start_webserver(void) {
+    // Initialize SPIFFS first
+    if (init_spiffs() != ESP_OK) {
+        return NULL;
+    }
+    
     httpd_handle_t server = NULL;
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+    config.uri_match_fn = httpd_uri_match_wildcard;
     
     ESP_LOGI(TAG, "Starting HTTP server on port: %d", config.server_port);
     esp_err_t ret = httpd_start(&server, &config);
@@ -62,16 +112,25 @@ httpd_handle_t start_webserver(void) {
         ESP_LOGE(TAG, "Failed to start HTTP server");
         return NULL;
     }
-
-    // Register URI handlers
-    httpd_uri_t index_uri = {
-        .uri = "/",
+    
+    // Register handlers
+    httpd_uri_t file_uri = {
+        .uri = "/*",
         .method = HTTP_GET,
-        .handler = index_handler,
+        .handler = file_handler,
         .user_ctx = NULL
     };
     
-    httpd_register_uri_handler(server, &index_uri);
+    httpd_uri_t api_status_uri = {
+        .uri = "/api/status",
+        .method = HTTP_GET,
+        .handler = api_status_handler,
+        .user_ctx = NULL
+    };
+    
+    httpd_register_uri_handler(server, &api_status_uri);
+    httpd_register_uri_handler(server, &file_uri);
+    
     ESP_LOGI(TAG, "HTTP server started");
     return server;
 }
