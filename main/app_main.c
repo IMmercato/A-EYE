@@ -1,69 +1,76 @@
-#include <esp_log.h>
-#include <nvs_flash.h>
-#include "esp_wifi.h"
-#include "esp_event.h"
-#include "esp_netif.h"
-#include "esp_spiffs.h"
+#include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "esp_log.h"
+#include "esp_err.h"
+#include "nvs_flash.h"
+#include "esp_event.h"
+#include "esp_netif.h"
+#include "esp_wifi.h"
 #include "app_httpd.h"
 
 static const char *TAG = "app_main";
 
-// --- SPIFFS Initialization ---
-void init_spiffs(void) {
-    ESP_LOGI(TAG, "Mounting SPIFFS...");
+#define WIFI_SSID      "WIFI_SSID"
+#define WIFI_PASSWORD  "WIFI_PASSWORD"
 
-    esp_vfs_spiffs_conf_t conf = {
-        .base_path = "/spiffs",
-        .partition_label = NULL,
-        .max_files = 5,
-        .format_if_mount_failed = true
-    };
-
-    esp_err_t ret = esp_vfs_spiffs_register(&conf);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "SPIFFS mount failed: %s", esp_err_to_name(ret));
-        return;
+static void wifi_event_handler(void *arg, esp_event_base_t base,
+                               int32_t id, void *data)
+{
+    if (base == WIFI_EVENT && id == WIFI_EVENT_STA_START) {
+        esp_wifi_connect();
     }
-
-    size_t total = 0, used = 0;
-    ret = esp_spiffs_info(conf.partition_label, &total, &used);
-    if (ret == ESP_OK) {
-        ESP_LOGI(TAG, "SPIFFS size: %d, used: %d", total, used);
+    else if (base == WIFI_EVENT && id == WIFI_EVENT_STA_DISCONNECTED) {
+        ESP_LOGW(TAG, "Disconnected, retrying...");
+        esp_wifi_connect();
+    }
+    else if (base == IP_EVENT && id == IP_EVENT_STA_GOT_IP) {
+        ip_event_got_ip_t *event = (ip_event_got_ip_t *)data;
+        ESP_LOGI(TAG, "Got IP address: " IPSTR, IP2STR(&event->ip_info.ip));
     }
 }
 
-// --- Wi-Fi Setup (Stub - should implement full init) ---
-void start_wifi(void) {
-    // Initialize networking
-    esp_netif_init();
-    esp_event_loop_create_default();
+void app_main(void)
+{
+    // 1. NVS init
+    esp_err_t ret = nvs_flash_init();
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES ||
+        ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        ret = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK(ret);
+
+    // 2. TCP/IP and Wi-Fi stack
+    ESP_ERROR_CHECK(esp_netif_init());
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
     esp_netif_create_default_wifi_sta();
 
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-    esp_wifi_init(&cfg);
+    ESP_ERROR_CHECK(esp_wifi_init(&cfg));
 
-    wifi_config_t wifi_config = {
-        .sta = {
-            .ssid = "Galaxy A53 5G61C5",
-            .password = "xfuw1104"
-        }
-    };
-    esp_wifi_set_mode(WIFI_MODE_STA);
-    esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config);
-    esp_wifi_start();
+    // 3. Register handlers
+    ESP_ERROR_CHECK(esp_event_handler_instance_register(
+        WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler, NULL, NULL));
+    ESP_ERROR_CHECK(esp_event_handler_instance_register(
+        IP_EVENT, IP_EVENT_STA_GOT_IP, &wifi_event_handler, NULL, NULL));
 
-    ESP_LOGI(TAG, "Wi-Fi started. Connecting to %s...", wifi_config.sta.ssid);
-}
+    // 4. Configure station
+    wifi_config_t wifi_conf = { 0 };
+    strlcpy((char *)wifi_conf.sta.ssid,      WIFI_SSID,      sizeof(wifi_conf.sta.ssid));
+    strlcpy((char *)wifi_conf.sta.password,  WIFI_PASSWORD,  sizeof(wifi_conf.sta.password));
+    wifi_conf.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
 
-// --- Main App Entry ---
-void app_main(void) {
-    ESP_ERROR_CHECK(nvs_flash_init());
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+    ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_conf));
+    ESP_ERROR_CHECK(esp_wifi_start());
 
-    start_wifi();
-    init_spiffs(); // Only needed if serving files from SPIFFS
-    start_webserver(); // Starts your HTTP server (in app_httpd.c)
+    ESP_LOGI(TAG, "Connecting to SSID \"%s\"", WIFI_SSID);
 
-    ESP_LOGI(TAG, "Webserver running");
+    // 5. Small delay to let IP_EVENT fire
+    vTaskDelay(pdMS_TO_TICKS(5000));
+
+    // 6. Start HTTP server
+    start_webserver();
+    ESP_LOGI(TAG, "Webserver running, browse with your phone using the above IP");
 }
