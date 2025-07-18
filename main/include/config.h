@@ -2,8 +2,8 @@
 #define CONFIG_H
 
 // Wifi Configuration
-#define WIFI_SSID "Galaxy A53 5G61C5"
-#define WIFI_PASSWORD "xfuw1104"
+#define WIFI_SSID "WIFI_SSID"
+#define WIFI_PASSWORD "WIFI_PASSWORD"
 
 // Server Configuration
 #define SERVER_URL ""

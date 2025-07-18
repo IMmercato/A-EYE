@@ -1,4 +1,3 @@
-app
 build
 .vscode
 managed_components
@@ -9,3 +8,5 @@ sdkconfig.ci
 components
 prove
 .env
+node_modules
+package-lock.json
