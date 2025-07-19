@@ -6,8 +6,8 @@
 #define WIFI_PASSWORD "WIFI_PASSWORD"
 
 // Server Configuration
-#define SERVER_URL ""
-#define SERVER_TIMEOUT_MS 10000
+#define SERVER_URL "https://a-eye-n8jr.onrender.com/analyze"
+#define SERVER_TIMEOUT_MS 30000
 
 // Camera Configuration
 #define CAMERA_FRAME_SIZE FRAMESIZE_QQVGA
@@ -16,6 +16,12 @@
 
 // GPIO Configurattion
 #define LED_GPIO_NUM 3
+
+// LCD panel Configuration
+#define LCD_CS_GPIO     10
+#define LCD_DC_GPIO     9
+#define LCD_RST_GPIO    8
+//#define LCD_SPI_HOST    SPI2_HOST
 
 // Hardware Pins(for ESP32-S3-EYE)
 #define CAMERA_PIN_PWDN    -1
