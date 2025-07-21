@@ -18,9 +18,12 @@
 #define LED_GPIO_NUM 3
 
 // LCD panel Configuration
+#define LCD_MOSI_GPIO   11
+#define LCD_CLK_GPIO    12
 #define LCD_CS_GPIO     10
 #define LCD_DC_GPIO     9
 #define LCD_RST_GPIO    8
+#define LCD_GPIO_NUM    21
 //#define LCD_SPI_HOST    SPI2_HOST
 
 // Hardware Pins(for ESP32-S3-EYE)

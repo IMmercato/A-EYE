@@ -10,3 +10,4 @@ prove
 .env
 node_modules
 package-lock.json
+launch_prompt.txt

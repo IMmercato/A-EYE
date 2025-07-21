@@ -29,7 +29,12 @@ void app_main(void) {
     display_init();
     display_show_text("Starting...");
 
-    wifi_init();
+    //wifi_init();
+    //display_show_text("WIFI Connecting...");
+
+    //wifi_wait_for_connection();
+    //ESP_LOGI(TAG, "WiFi Connected!");
+    //display_show_text("WiFi Connected!");
     camera_init();
     server_comm_init();
     ai_processor_init();
