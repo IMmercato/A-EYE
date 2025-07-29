@@ -24,6 +24,16 @@ This project uses the **ESP32-S3-EYE** module, which I received from [HackClub](
 
 ---
 
+## Block Diagram
+<img src="https://github.com/espressif/esp-who/blob/master/docs/_static/get-started/ESP32-S3-EYE_20210913_V03_SystemBlock.png" alt="Diagram">
+
+---
+
+## 3D Model
+[![Smart Goggles 3D Model](https://immagini-b1484.web.app/A-EYE.png)](https://skfb.ly/pzDNL)
+
+---
+
 ## 📦 Installation & Usage
 
 ### 1. Clone this repository
