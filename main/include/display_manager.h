@@ -6,5 +6,6 @@
 esp_err_t display_init(void);
 void display_show_text(const char* text);
 void display_blink_status(void);
+void display_test_pattern(void);
 
 #endif

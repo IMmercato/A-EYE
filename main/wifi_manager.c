@@ -150,7 +150,7 @@ esp_err_t wifi_init(void) {
     ESP_ERROR_CHECK(esp_wifi_start());
 
     // ✅ Start indicator and timeout tasks
-    xTaskCreate(&led_wifi_indicator_task, "led_wifi_indicator", 2048, NULL, 5, NULL);
+    xTaskCreate(&led_wifi_indicator_task, "led_wifi_indicator", 8192, NULL, 5, NULL);
     xTaskCreate(&wifi_timeout_monitor_task, "wifi_timeout_monitor", 2048, NULL, 5, NULL);
 
     return ESP_OK;

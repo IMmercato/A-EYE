@@ -14,10 +14,12 @@
 
 static const char *TAG = "A-EYE";
 
-void app_main(void) {
+void app_main(void)
+{
     // Initialize NVS
     esp_err_t ret = nvs_flash_init();
-    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND)
+    {
         ESP_ERROR_CHECK(nvs_flash_erase());
         ret = nvs_flash_init();
     }
@@ -27,14 +29,15 @@ void app_main(void) {
 
     // Initialize modules
     display_init();
+    display_test_pattern();
     display_show_text("Starting...");
 
-    //wifi_init();
-    //display_show_text("WIFI Connecting...");
+    wifi_init();
+    display_show_text("WIFI Connecting...");
 
-    //wifi_wait_for_connection();
-    //ESP_LOGI(TAG, "WiFi Connected!");
-    //display_show_text("WiFi Connected!");
+    wifi_wait_for_connection();
+    ESP_LOGI(TAG, "WiFi Connected!");
+    display_show_text("WiFi Connected!");
     camera_init();
     server_comm_init();
     ai_processor_init();
