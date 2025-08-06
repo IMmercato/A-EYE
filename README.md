@@ -34,6 +34,9 @@ This project uses the **ESP32-S3-EYE** module, which I received from [HackClub](
 
 ---
 
+## Video
+[Concept and mock data usage](https://immagini-b1484.web.app/A-EYEvideo.mp4)
+
 ## 📦 Installation & Usage
 
 ### 1. Clone this repository
@@ -70,10 +73,8 @@ Put on your AI glasses, connect to power, and watch it come alive! You can monit
 
 ## 🔧 Features
 
-- 🎯 Real-time face/object detection
+- 🎯 Real-time face/object detection with mocked data
 - 📡 Wi-Fi & Bluetooth capabilities
-- 🎙️ Voice input via built-in microphone
-- 💡 Compact and wearable form factor
 
 ---
 
