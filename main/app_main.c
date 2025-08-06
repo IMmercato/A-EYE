@@ -5,6 +5,7 @@
 #include "esp_log.h"
 #include "esp_err.h"
 #include "nvs_flash.h"
+#include "lvgl.h"
 
 #include "wifi_manager.h"
 #include "camera_manager.h"
@@ -26,6 +27,22 @@ void app_main(void)
     ESP_ERROR_CHECK(ret);
 
     ESP_LOGI(TAG, "A_EYE Starting...");
+
+// Display Initialize
+#ifdef DISPLAY_RESET_PIN
+    if (GPIO_IS_VALID_GPIO(DISPLAY_RESET_PIN))
+    {
+        gpio_reset_pin(DISPLAY_RESET_PIN);
+        gpio_set_direction(DISPLAY_RESET_PIN, GPIO_MODE_OUTPUT);
+        gpio_set_level(DISPLAY_RESET_PIN, 0);
+        vTaskDelay(100 / portTICK_PERIOD_MS);
+        gpio_set_level(DISPLAY_RESET_PIN, 1);
+        vTaskDelay(100 / portTICK_PERIOD_MS);
+    }
+#endif
+
+    // Initialize LVGL
+    lv_init();
 
     // Initialize modules
     display_init();

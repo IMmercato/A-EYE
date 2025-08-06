@@ -2,8 +2,8 @@
 #define CONFIG_H
 
 // Wifi Configuration
-#define WIFI_SSID ""
-#define WIFI_PASSWORD ""
+#define WIFI_SSID "Galaxy A53 5G61C5"
+#define WIFI_PASSWORD "xfuw1104"
 
 // Server Configuration
 #define SERVER_URL "https://a-eye-n8jr.onrender.com/analyze"
@@ -25,6 +25,7 @@
 #define LCD_DC_GPIO     9
 #define LCD_RST_GPIO    8
 #define LCD_GPIO_NUM    21
+#define DISPLAY_RESET_PIN GPIO_NUM_NC
 #define LCD_SPI_HOST    SPI2_HOST
 
 // Hardware Pins(for ESP32-S3-EYE)

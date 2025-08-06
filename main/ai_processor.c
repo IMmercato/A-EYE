@@ -19,8 +19,13 @@ esp_err_t ai_processor_init(void) {
 void process_server_response(const char* response) {
     if (!response) {
         ESP_LOGE(TAG, "Empty response");
+        display_show_text("Empty response");
         return;
     }
+
+    char preview[64];
+    snprintf(preview, sizeof(preview), "Resp: %.57s", response);
+    display_show_text(preview);
     
     cJSON *json = cJSON_Parse(response);
     if (!json) {
