@@ -23,6 +23,8 @@ void process_server_response(const char* response) {
         return;
     }
 
+    ESP_LOGI(TAG, "Raw response: %s", response);
+
     char preview[64];
     snprintf(preview, sizeof(preview), "Resp: %.57s", response);
     display_show_text(preview);

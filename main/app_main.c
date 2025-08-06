@@ -4,6 +4,8 @@
 #include "esp_system.h"
 #include "esp_log.h"
 #include "esp_err.h"
+//#include "esp_sntp.h"
+//#include "lwip/apps/sntp.h"
 #include "nvs_flash.h"
 #include "lvgl.h"
 
@@ -51,10 +53,24 @@ void app_main(void)
 
     wifi_init();
     display_show_text("WIFI Connecting...");
-
     wifi_wait_for_connection();
+
+    ESP_LOGI(TAG, "Initializing SNTP...");
+    //sntp_setoperatingmode(SNTP_OPMODE_POLL);
+    //sntp_setservername(0, "pool.ntp.org");
+    //sntp_init();
+    display_show_text("Getting time...");
+
+//    int retry = 0;
+//    const int retry_count = 10;
+//    while (sntp_get_sync_status() == SNTP_SYNC_STATUS_RESET && ++retry < retry_count) {
+//        ESP_LOGI(TAG, "Waiting for system time to be set... (%d/%d)", retry, retry_count);
+//        vTaskDelay(2000 / portTICK_PERIOD_MS);
+//    }
+    
     ESP_LOGI(TAG, "WiFi Connected!");
     display_show_text("WiFi Connected!");
+
     camera_init();
     server_comm_init();
     ai_processor_init();
